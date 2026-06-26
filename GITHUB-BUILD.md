@@ -22,7 +22,7 @@ git add .
 git commit -m "Initial commit: AI Test Case Generator extension"
 
 git branch -M main
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/ado-ai-testcase-generator.git
+git remote add origin https://github.com/jayasreeani/ado-ai-testcase-generator.git
 git push -u origin main
 ```
 
