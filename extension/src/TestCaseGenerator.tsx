@@ -26,7 +26,7 @@ export function TestCaseGenerator(): React.ReactElement {
   const [count, setCount] = useState(5);
   const [includeNegative, setIncludeNegative] = useState(true);
   const [includeBoundary, setIncludeBoundary] = useState(true);
-  const [apiBaseUrl, setApiBaseUrlState] = useState("");
+  const [apiBaseUrlInput, setApiBaseUrlInput] = useState("");
 
   useEffect(() => {
     void (async () => {
@@ -34,7 +34,7 @@ export function TestCaseGenerator(): React.ReactElement {
         await initializeSdk();
         const configuredUrl = getApiBaseUrl();
         if (configuredUrl) {
-          setApiBaseUrlState(configuredUrl);
+          setApiBaseUrlInput(configuredUrl);
         }
         const workItemId = await getCurrentWorkItemId();
         const context = await loadUserStoryContext(workItemId);
@@ -55,12 +55,12 @@ export function TestCaseGenerator(): React.ReactElement {
     setSuccess(null);
 
     try {
-      const apiBaseUrl = getApiBaseUrl() || apiBaseUrlState.trim();
-      if (!apiBaseUrl) {
+      const resolvedApiBaseUrl = getApiBaseUrl() || apiBaseUrlInput.trim();
+      if (!resolvedApiBaseUrl) {
         throw new Error("Enter the AI backend API Base URL before generating.");
       }
-      setApiBaseUrl(apiBaseUrl);
-      const response = await generateTestCases(apiBaseUrl, {
+      setApiBaseUrl(resolvedApiBaseUrl);
+      const response = await generateTestCases(resolvedApiBaseUrl, {
         userStory,
         options: { count, includeNegative, includeBoundary },
       });
@@ -77,7 +77,7 @@ export function TestCaseGenerator(): React.ReactElement {
     } finally {
       setGenerating(false);
     }
-  }, [userStory, count, includeNegative, includeBoundary, apiBaseUrlState]);
+  }, [userStory, count, includeNegative, includeBoundary, apiBaseUrlInput]);
 
   const handleCreate = useCallback(async () => {
     if (!userStory) return;
@@ -141,8 +141,8 @@ export function TestCaseGenerator(): React.ReactElement {
           <input
             type="url"
             placeholder="https://your-api.azurewebsites.net"
-            value={apiBaseUrlState}
-            onChange={(e) => setApiBaseUrlState(e.target.value)}
+            value={apiBaseUrlInput}
+            onChange={(e) => setApiBaseUrlInput(e.target.value)}
           />
         </label>
         <label>
