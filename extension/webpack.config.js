@@ -12,6 +12,9 @@ module.exports = {
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
   },
+  externals: {
+    "azure-devops-extension-sdk": "SDK",
+  },
   module: {
     rules: [
       { test: /\.tsx?$/, use: "ts-loader", exclude: /node_modules/ },

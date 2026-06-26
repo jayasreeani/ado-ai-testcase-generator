@@ -1,10 +1,6 @@
 import * as SDK from "azure-devops-extension-sdk";
 import { getClient } from "azure-devops-extension-api";
 import {
-  JsonPatchOperation,
-  Operation,
-} from "azure-devops-extension-api/WebApi";
-import {
   WorkItemTrackingRestClient,
   WorkItemExpand,
 } from "azure-devops-extension-api/WorkItemTracking";
@@ -12,7 +8,7 @@ import type { UserStoryContext } from "../types";
 
 const ACCEPTANCE_CRITERIA_FIELD = "Microsoft.VSTS.Common.AcceptanceCriteria";
 
-let cachedApiBaseUrl: string | null = null;
+let cachedApiBaseUrl = "";
 
 export async function initializeSdk(): Promise<void> {
   await SDK.init();
@@ -21,17 +17,16 @@ export async function initializeSdk(): Promise<void> {
 }
 
 function resolveApiBaseUrl(): string {
-  const config = SDK.getConfiguration();
-  const fromFormConfig = config?.apiBaseUrl as string | undefined;
+  const config = SDK.getConfiguration() as { apiBaseUrl?: string };
+  const fromFormConfig = config.apiBaseUrl;
   if (fromFormConfig?.trim()) {
     return fromFormConfig.replace(/\/$/, "");
   }
-
   return "";
 }
 
 export function getApiBaseUrl(): string {
-  return cachedApiBaseUrl ?? "";
+  return cachedApiBaseUrl;
 }
 
 export function setApiBaseUrl(url: string): void {
@@ -39,8 +34,11 @@ export function setApiBaseUrl(url: string): void {
 }
 
 export async function getCurrentWorkItemId(): Promise<number> {
-  const config = SDK.getConfiguration();
-  const id = config?.id ?? config?.workItemId;
+  const config = SDK.getConfiguration() as {
+    id?: number | string;
+    workItemId?: number | string;
+  };
+  const id = config.id ?? config.workItemId;
   if (typeof id === "number") return id;
   if (typeof id === "string") return parseInt(id, 10);
   throw new Error("Unable to determine current work item ID.");
@@ -58,7 +56,7 @@ export async function loadUserStoryContext(
     WorkItemExpand.Fields
   );
 
-  const fields = workItem.fields ?? {};
+  const fields = (workItem.fields ?? {}) as Record<string, unknown>;
   return {
     id: workItemId,
     title: String(fields["System.Title"] ?? ""),
@@ -95,15 +93,6 @@ function escapeXml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function addField(path: string, value: string): JsonPatchOperation {
-  return {
-    op: Operation.Add,
-    path,
-    value,
-    from: "",
-  };
-}
-
 export async function createTestCaseWorkItem(
   userStoryId: number,
   testCase: {
@@ -115,19 +104,23 @@ export async function createTestCaseWorkItem(
 ): Promise<number> {
   const client = getClient(WorkItemTrackingRestClient);
 
-  const patchDocument: JsonPatchOperation[] = [
-    addField("/fields/System.Title", testCase.title),
-    addField("/fields/System.Description", testCase.description),
-    addField("/fields/System.AreaPath", context.areaPath),
-    addField("/fields/System.IterationPath", context.iterationPath),
-    addField(
-      "/fields/Microsoft.VSTS.TCM.Steps",
-      buildStepsXml(testCase.steps)
-    ),
+  const patchDocument = [
+    { op: "add", path: "/fields/System.Title", value: testCase.title },
+    { op: "add", path: "/fields/System.Description", value: testCase.description },
+    { op: "add", path: "/fields/System.AreaPath", value: context.areaPath },
     {
-      op: Operation.Add,
+      op: "add",
+      path: "/fields/System.IterationPath",
+      value: context.iterationPath,
+    },
+    {
+      op: "add",
+      path: "/fields/Microsoft.VSTS.TCM.Steps",
+      value: buildStepsXml(testCase.steps),
+    },
+    {
+      op: "add",
       path: "/relations/-",
-      from: "",
       value: {
         rel: "Microsoft.VSTS.Common.TestedBy-Reverse",
         url: workItemUrl(userStoryId),
@@ -142,7 +135,7 @@ export async function createTestCaseWorkItem(
   }
 
   const created = await client.createWorkItem(
-    patchDocument,
+    patchDocument as never,
     project,
     "Test Case"
   );
