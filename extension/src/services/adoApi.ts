@@ -93,6 +93,16 @@ function escapeXml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function getExtendedWebContext(): {
+  project?: { name?: string };
+  collection?: { uri?: string };
+} {
+  return SDK.getWebContext() as {
+    project?: { name?: string };
+    collection?: { uri?: string };
+  };
+}
+
 export async function createTestCaseWorkItem(
   userStoryId: number,
   testCase: {
@@ -129,7 +139,7 @@ export async function createTestCaseWorkItem(
     },
   ];
 
-  const project = SDK.getWebContext().project?.name;
+  const project = getExtendedWebContext().project?.name;
   if (!project) {
     throw new Error("Unable to determine current project.");
   }
@@ -148,6 +158,6 @@ export async function createTestCaseWorkItem(
 }
 
 function workItemUrl(workItemId: number): string {
-  const collectionUri = SDK.getWebContext().collection?.uri ?? "";
+  const collectionUri = getExtendedWebContext().collection?.uri ?? "";
   return `${collectionUri}_apis/wit/workitems/${workItemId}`;
 }
