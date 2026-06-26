@@ -54,11 +54,16 @@
   color: #616161;
 }
 
-.options input[type="number"] {
-  width: 80px;
+.options input[type="number"],
+.options input[type="url"] {
+  width: 280px;
   padding: 6px 8px;
   border: 1px solid #c8c8c8;
   border-radius: 4px;
+}
+
+.options input[type="number"] {
+  width: 80px;
 }
 
 .checkbox {

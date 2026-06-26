@@ -1,10 +1,9 @@
 import * as SDK from "azure-devops-extension-sdk";
 import { getClient } from "azure-devops-extension-api";
 import {
-  CommonServiceIds,
-  ExtensionDataScope,
-  IExtensionDataService,
-} from "azure-devops-extension-api/Common/ExtensionData";
+  JsonPatchOperation,
+  Operation,
+} from "azure-devops-extension-api/WebApi";
 import {
   WorkItemTrackingRestClient,
   WorkItemExpand,
@@ -12,35 +11,20 @@ import {
 import type { UserStoryContext } from "../types";
 
 const ACCEPTANCE_CRITERIA_FIELD = "Microsoft.VSTS.Common.AcceptanceCriteria";
-const SETTINGS_KEY = "apiBaseUrl";
 
 let cachedApiBaseUrl: string | null = null;
 
 export async function initializeSdk(): Promise<void> {
   await SDK.init();
   await SDK.ready();
-  cachedApiBaseUrl = await resolveApiBaseUrl();
+  cachedApiBaseUrl = resolveApiBaseUrl();
 }
 
-async function resolveApiBaseUrl(): Promise<string> {
+function resolveApiBaseUrl(): string {
   const config = SDK.getConfiguration();
   const fromFormConfig = config?.apiBaseUrl as string | undefined;
   if (fromFormConfig?.trim()) {
     return fromFormConfig.replace(/\/$/, "");
-  }
-
-  try {
-    const extData = await SDK.getService<IExtensionDataService>(
-      CommonServiceIds.ExtensionDataService
-    );
-    const orgValue = await extData.getValue(SETTINGS_KEY, {
-      scopeType: ExtensionDataScope.Organization,
-    });
-    if (typeof orgValue === "string" && orgValue.trim()) {
-      return orgValue.replace(/\/$/, "");
-    }
-  } catch {
-    // Extension data may be unavailable during local development.
   }
 
   return "";
@@ -48,6 +32,10 @@ async function resolveApiBaseUrl(): Promise<string> {
 
 export function getApiBaseUrl(): string {
   return cachedApiBaseUrl ?? "";
+}
+
+export function setApiBaseUrl(url: string): void {
+  cachedApiBaseUrl = url.replace(/\/$/, "");
 }
 
 export async function getCurrentWorkItemId(): Promise<number> {
@@ -64,6 +52,7 @@ export async function loadUserStoryContext(
   const client = getClient(WorkItemTrackingRestClient);
   const workItem = await client.getWorkItem(
     workItemId,
+    undefined,
     undefined,
     undefined,
     WorkItemExpand.Fields
@@ -106,6 +95,15 @@ function escapeXml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function addField(path: string, value: string): JsonPatchOperation {
+  return {
+    op: Operation.Add,
+    path,
+    value,
+    from: "",
+  };
+}
+
 export async function createTestCaseWorkItem(
   userStoryId: number,
   testCase: {
@@ -117,27 +115,19 @@ export async function createTestCaseWorkItem(
 ): Promise<number> {
   const client = getClient(WorkItemTrackingRestClient);
 
-  const patchDocument = [
-    { op: "add", path: "/fields/System.Title", value: testCase.title },
+  const patchDocument: JsonPatchOperation[] = [
+    addField("/fields/System.Title", testCase.title),
+    addField("/fields/System.Description", testCase.description),
+    addField("/fields/System.AreaPath", context.areaPath),
+    addField("/fields/System.IterationPath", context.iterationPath),
+    addField(
+      "/fields/Microsoft.VSTS.TCM.Steps",
+      buildStepsXml(testCase.steps)
+    ),
     {
-      op: "add",
-      path: "/fields/System.Description",
-      value: testCase.description,
-    },
-    { op: "add", path: "/fields/System.AreaPath", value: context.areaPath },
-    {
-      op: "add",
-      path: "/fields/System.IterationPath",
-      value: context.iterationPath,
-    },
-    {
-      op: "add",
-      path: "/fields/Microsoft.VSTS.TCM.Steps",
-      value: buildStepsXml(testCase.steps),
-    },
-    {
-      op: "add",
+      op: Operation.Add,
       path: "/relations/-",
+      from: "",
       value: {
         rel: "Microsoft.VSTS.Common.TestedBy-Reverse",
         url: workItemUrl(userStoryId),
