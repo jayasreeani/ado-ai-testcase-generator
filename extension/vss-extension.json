@@ -3,7 +3,7 @@
   "id": "ai-testcase-generator",
   "name": "AI Test Case Generator",
   "version": "0.1.0",
-  "publisher": "YOUR_PUBLISHER_ID",
+  "publisher": "GoGym",
   "description": "Auto-generate Test Cases from User Stories in Azure DevOps using AI.",
   "categories": ["Azure Boards"],
   "targets": [
@@ -57,7 +57,6 @@
     }
   ],
   "configuration": {
-    "widgets": [],
     "properties": {
       "apiBaseUrl": {
         "description": "URL of the AI backend service (e.g. https://your-app.azurewebsites.net)",

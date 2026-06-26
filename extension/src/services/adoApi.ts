@@ -1,9 +1,10 @@
 import * as SDK from "azure-devops-extension-sdk";
+import { getClient } from "azure-devops-extension-api";
 import {
   CommonServiceIds,
-  getClient,
+  ExtensionDataScope,
   IExtensionDataService,
-} from "azure-devops-extension-api";
+} from "azure-devops-extension-api/Common/ExtensionData";
 import {
   WorkItemTrackingRestClient,
   WorkItemExpand,
@@ -32,10 +33,10 @@ async function resolveApiBaseUrl(): Promise<string> {
     const extData = await SDK.getService<IExtensionDataService>(
       CommonServiceIds.ExtensionDataService
     );
-    const orgValue = await extData.getValue<string>(SETTINGS_KEY, {
-      scopeType: "Organization",
+    const orgValue = await extData.getValue(SETTINGS_KEY, {
+      scopeType: ExtensionDataScope.Organization,
     });
-    if (orgValue?.trim()) {
+    if (typeof orgValue === "string" && orgValue.trim()) {
       return orgValue.replace(/\/$/, "");
     }
   } catch {
@@ -61,9 +62,12 @@ export async function loadUserStoryContext(
   workItemId: number
 ): Promise<UserStoryContext> {
   const client = getClient(WorkItemTrackingRestClient);
-  const workItem = await client.getWorkItem(workItemId, undefined, undefined, [
-    WorkItemExpand.Fields,
-  ]);
+  const workItem = await client.getWorkItem(
+    workItemId,
+    undefined,
+    undefined,
+    WorkItemExpand.Fields
+  );
 
   const fields = workItem.fields ?? {};
   return {
