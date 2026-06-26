@@ -20,7 +20,18 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+  res.json({
+    status: "ok",
+    provider: process.env.AI_PROVIDER ?? "azure-openai",
+  });
+});
+
+app.get("/", (_req, res) => {
+  res.json({
+    service: "AI Test Case Generator API",
+    health: "/health",
+    generate: "POST /api/generate-testcases",
+  });
 });
 
 app.post("/api/generate-testcases", async (req, res) => {
