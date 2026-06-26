@@ -1,0 +1,69 @@
+{
+  "manifestVersion": 1,
+  "id": "ai-testcase-generator",
+  "name": "AI Test Case Generator",
+  "version": "0.1.0",
+  "publisher": "YOUR_PUBLISHER_ID",
+  "description": "Auto-generate Test Cases from User Stories in Azure DevOps using AI.",
+  "categories": ["Azure Boards"],
+  "targets": [
+    {
+      "id": "Microsoft.VisualStudio.Services"
+    }
+  ],
+  "icons": {
+    "default": "images/icon.png"
+  },
+  "content": {
+    "details": {
+      "path": "overview.md"
+    }
+  },
+  "files": [
+    {
+      "path": "dist",
+      "addressable": true
+    },
+    {
+      "path": "overview.md",
+      "addressable": true
+    }
+  ],
+  "scopes": [
+    "vso.work",
+    "vso.work_write",
+    "vso.test",
+    "vso.test_write"
+  ],
+  "contributions": [
+    {
+      "id": "ai-testcase-generator-tab",
+      "type": "ms.vss-work-web.work-item-form-group",
+      "description": "Generate test cases from this user story using AI",
+      "targets": ["ms.vss-work-web.work-item-form"],
+      "properties": {
+        "name": "AI Test Cases",
+        "uri": "dist/index.html",
+        "height": 600
+      },
+      "constraints": [
+        {
+          "name": "WorkItemType",
+          "properties": {
+            "workItemType": "User Story"
+          }
+        }
+      ]
+    }
+  ],
+  "configuration": {
+    "widgets": [],
+    "properties": {
+      "apiBaseUrl": {
+        "description": "URL of the AI backend service (e.g. https://your-app.azurewebsites.net)",
+        "type": "string",
+        "default": ""
+      }
+    }
+  }
+}

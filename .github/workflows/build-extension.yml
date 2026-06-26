@@ -1,0 +1,44 @@
+name: Build ADO Extension VSIX
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - "extension/**"
+      - ".github/workflows/build-extension.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extension
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Install TFX CLI
+        run: npm install -g tfx-cli
+
+      - name: Create VSIX package
+        run: tfx extension create --manifest-globs vss-extension.json
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GoGym-ai-testcase-generator-vsix
+          path: extension/*.vsix
+          if-no-files-found: error
